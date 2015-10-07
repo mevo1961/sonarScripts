@@ -1,0 +1,67 @@
+# Required metadata
+sonar.projectKey=fsmddal_without_tools
+sonar.projectName=fsmddal project without tools dir
+sonar.projectVersion=1.0
+
+# Comma-separated paths to directories with sources (required)
+sonar.sources=src
+
+#SCM stats/activity
+sonar.scm.url=scm:svn:https://svne1.access.nsn.com/isource/svnroot/BTS_SC_LFS/os/trunk/fsmr3/src-fsmddal
+
+# Language
+# sonar.language=c++
+
+sonar.exclusions=\
+src/tools/**,\
+src/lx2/**,\
+src/stubs/**,\
+# src/build/driver-headers/**,\
+# src/clk/docxo_eeprom/**,\
+# src/include/ddal_intern/**,\
+# src/clk/ddal_clk_ocxo_rel4_temporary_stubs.c,\
+src/clk/ddal_clk_ocxo_sysfs.c,\
+src/clk/ddal_clk_rel4_temporary_stubs.c,\
+src/clk/ddal_clk_sfn_sysfs.c,\
+src/clk/ddal_clk_sysfs.c,\
+src/clk/ddal_clk_time_sysfs.c,\
+src/clk/ddal_event_sysfs.c,\
+src/clk/ddal_sah_sysfs.c,\
+src/cma/ddal_cma.c,\
+src/dac/ddal_dac_rel4.c,\
+src/dac/ddal_dac_rel4_temporary_stubs.c,\
+src/emtimer/ddal_emtimer.c,\
+src/fpa/fpa_test/fpa_test.c,\
+src/id/ddal_id.c
+
+# Encoding of the source files
+# sonar.sourceEncoding=UTF-8
+
+# settings for C/C++ plugin  data
+# sonar.cxx.defines=__VA_ARGS__ "" \n\
+#                   __func__    ""
+# sonar.cxx.includeDirectories=\
+# /usr/include/,\
+# /usr/include/i386-linux-gnu,\
+# /usr/include/c++/4.7/,\
+# /usr/include/c++/4.7/tr1,\
+# /usr/include/c++/4.7/i486-linux-gnu/,\
+# /usr/include/linux,\
+# /mnt/workspace/lfs_build/src-fsmddal/build/fct/src/ddal/include/,\
+# /mnt/workspace/lfs_build/src-fsmddal/src/include,\
+# /mnt/workspace/lfs_build/sonar/src-fsmddal/src/include,\
+# /mnt/workspace/lfs_build/src-fsmddal/src/tools/gpsd/gpsd-3.10-lfs/,\
+# /mnt/workspace/lfs_build/src-ifddg/src/include/,\
+# /mnt/workspace/lfs_build/src-unittests/src/mockups/cmock-libddal/include/,\
+# /mnt/workspace/lfs_build/src-fsmifdd/src/include,\
+# /mnt/workspace/lfs_build/src-fsmddg/src/include/iffsmddg
+
+# sonar.cxx.suffixes.headers=.hxx,.hpp,.hh,.h
+sonar.cxx.errorRecoveryEnabled=True
+sonar.cxx.coverage.reportPath=cobertura/UT_fsmr3_coverage.xml
+sonar.cxx.coverage.itReportPath=cobertura/SCT_fsmr3_coverage.xml
+sonar.cxx.xunit.reportPath=cobertura/testcases.merged.xml
+# sonar.cxx.xunit.provideDetails=True
+# sonar.tests=unittests
+
+sonar.scm.disabled=true
