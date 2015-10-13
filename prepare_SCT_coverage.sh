@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+# set -x
 for target in fsmr3 fsmr4 
 do
     covFile=SCT_${target}_coverage.xml
@@ -9,7 +9,7 @@ do
     fi
     if [[ -e ${covFile} ]] ; then
 	tempFile=$(mktemp)
-        sed -e 's/fsmddal\//src\//' ${covFile}  >  ${tempFile}
+        sed -e 's:fsmddal/:src/:' ${covFile}  >  ${tempFile}
         mv ${tempFile} ${covFile}
     fi
 done
