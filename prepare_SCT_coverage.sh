@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # set -x
+# added comment
 for target in fsmr3 fsmr4 
 do
     covFile=SCT_${target}_coverage.xml
