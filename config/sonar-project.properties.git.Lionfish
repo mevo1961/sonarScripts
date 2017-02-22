@@ -1,0 +1,20 @@
+# Required metadata
+sonar.projectKey=fsmddal_lionfish
+sonar.projectName=fsmddal lionfish
+sonar.projectVersion=1.0
+
+# Comma-separated paths to directories with sources (required)
+sonar.sources=src/ddal
+
+sonar.cxx.suffixes.headers=.hxx,.hpp,.hh,.h
+sonar.cxx.errorRecoveryEnabled=True
+sonar.cxx.coverage.reportPath=cobertura/UT_Lionfish_coverage.xml
+sonar.cxx.coverage.itReportPath=cobertura/SCT_Lionfish_coverage.xml
+sonar.cxx.xunit.reportPath=xunit-reports/xunit_result_Lionfish.xml
+sonar.cxx.defines=CONFIG_FSM4_ARM \n\
+                  CONFIG_RIO_STG_SUPPORT
+# sonar.cxx.xunit.provideDetails=True
+# sonar.tests=unittests
+
+sonar.scm.disabled=true
+ 

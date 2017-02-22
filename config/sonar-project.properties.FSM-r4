@@ -1,0 +1,25 @@
+# Required metadata
+sonar.projectKey=fsmddal_fsmr4
+sonar.projectName=fsmddal fsmr4
+sonar.projectVersion=1.0
+
+# Comma-separated paths to directories with sources (required)
+sonar.sources=src
+
+#SCM stats/activity
+sonar.scm.url=scm:svn:https://svne1.access.nsn.com/isource/svnroot/BTS_SC_LFS/os/trunk/fsmr3/src-fsmddal
+
+# Language
+# sonar.language=c++
+
+sonar.cxx.suffixes.headers=.hxx,.hpp,.hh,.h
+sonar.cxx.errorRecoveryEnabled=True
+sonar.cxx.coverage.reportPath=cobertura/UT_FSM-r4_coverage.xml
+sonar.cxx.coverage.itReportPath=cobertura/SCT_FSM-r4_coverage.xml
+sonar.cxx.xunit.reportPath=xunit-reports/xunit_result_FSM-r4.xml
+sonar.cxx.defines=CONFIG_FSM4_ARM 1
+# sonar.cxx.xunit.provideDetails=True
+# sonar.tests=unittests
+
+sonar.scm.disabled=true
+ 
