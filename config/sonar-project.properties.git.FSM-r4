@@ -16,7 +16,7 @@ sonar.cxx.suffixes.headers=.hxx,.hpp,.hh,.h
 sonar.cxx.errorRecoveryEnabled=True
 sonar.cxx.coverage.reportPath=cobertura/UT_FSM-r4_coverage.xml
 sonar.cxx.coverage.itReportPath=cobertura/SCT_FSM-r4_coverage.xml
-sonar.cxx.xunit.reportPath=xunit-reports/xunit_result_FSM-r4.xml
+# sonar.cxx.xunit.reportPath=xunit-reports/xunit_result_FSM-r4.xml
 sonar.cxx.defines=CONFIG_FSM4_ARM \n\
                   CONFIG_RIO_STG_SUPPORT
 # sonar.cxx.xunit.provideDetails=True

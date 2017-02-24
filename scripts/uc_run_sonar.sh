@@ -1,11 +1,7 @@
 #!/bin/bash
 
-source ${WORKSPACE}/sonar/scripts/prepare_UT_coverage.sh
-source ${WORKSPACE}/sonar/scripts/prepare_SCT_coverage.sh
-source ${WORKSPACE}/sonar/scripts/append_exclusions_to_sonar_properties.sh
-
 ## @fn      usecase_SONAR_RUN_FSMDDAL()
-#  @brief   run sonar-runner on for the targets in $TARGET_LIST
+#  @brief   get coverage data from jenkins and run sonar-runner for the targets in $TARGET_LIST
 #  @param   <none>
 #  @return  <none>
 usecase_SONAR_RUN_FSMDDAL() {
@@ -13,29 +9,27 @@ usecase_SONAR_RUN_FSMDDAL() {
     echo TARGET_LIST = ${TARGET_LIST}
 
     # TODO: make the following paths configurable 
-    if $GIT ; then
-        export DDAL_PATH=${WORKSPACE}/sonar/build
-    else
-        export DDAL_PATH=${WORKSPACE}/sonar/src-fsmddal
-    fi
+    export CONFIG_DIR=${SONAR_ROOT}/config
+    export BUILD_DIR=${WORKSPACE}/build
+    export SONAR_DIR=${WORKSPACE}
 
+    mkdir -p ${SONAR_DIR}
+    cd ${SONAR_DIR}
+
+    # get sonar files either from sandbox or from production jenkins
+    export SERVER=
     if ${SANDBOX} ; then
-        server=lfs-sandbox.emea.nsn-net.net
+        SERVER=lfs-sandbox.emea.nsn-net.net
     else
-        server=lfs-ci.int.net.nokia.com
+        SERVER=lfs-ci.int.net.nokia.com
     fi
 
-    wget --no-proxy --no-check-certificate https://${server}/userContent/sonar/SCT/buildName.txt
+    wget --no-proxy --no-check-certificate https://${SERVER}/userContent/sonar/SCT/buildName.txt
     read -r buildName <buildName.txt
     echo read build name = ${buildName}
 
-    cd ${DDAL_PATH}
-    checkout_ddal_sources ${buildName}
+    _checkout_ddal_sources ${buildName}
 
-    export CONFIG_PATH=${WORKSPACE}/sonar/config
-
-    rm -rf ${DDAL_PATH}/cobertura
-    mkdir -p ${DDAL_PATH}/cobertura
     for target in ${TARGET_LIST}
     do
         run_sonar_single_target ${target} ${buildName}
@@ -45,49 +39,22 @@ usecase_SONAR_RUN_FSMDDAL() {
 }
 
 ## @fn      run_sonar_single_target()
-#  @brief   run sonar-runner on the current directory
+#  @brief   run sonar-runner for a given target
 #  @param   {target}    target for the sonar run, either FSM-r3 or FSM-r4
 #  @param   {buildName} build name to be copied into the properties file
 #  @return  <none>
 run_sonar_single_target() {
     local target=${1}
     local buildName=${2}
-    echo target = ${target}
-    echo SANDBOX = ${SANDBOX:-false}
 
     # get coverage data and prepare them for sonar execution
-    cd ${DDAL_PATH}/cobertura
-    local server=
+    mkdir -p ${SONAR_DIR}/cobertura
+    cd ${SONAR_DIR}
 
-    if ${SANDBOX} ; then
-        server=lfs-sandbox.emea.nsn-net.net
-    else
-        server=lfs-ci.int.net.nokia.com
-    fi
-    wget --no-proxy --no-check-certificate https://${server}/userContent/sonar/UT/${target}/coverage.xml.gz
-    mv coverage.xml.gz UT_${target}_coverage.xml.gz
-    echo now calling _prepare_UT_coverage
-    _prepare_UT_coverage ${target}
-
-    wget --no-proxy --no-check-certificate https://${server}/userContent/sonar/SCT/${target}/coverage.xml.gz
-    mv coverage.xml.gz SCT_${target}_coverage.xml.gz
-    _prepare_SCT_coverage ${target}
+    _get_coverage_files_from_jenkins ${target}
 
     # prepare sonar properties file and run sonar
-    cd ${DDAL_PATH}
-    local propfile=
-    if $GIT ; then
-        propfile=${CONFIG_PATH}/sonar-project.properties.git.${target}
-    else
-        propfile=${CONFIG_PATH}/sonar-project.properties.${target}
-    fi
-    cp ${propfile} sonar-project.properties
-    sed -i -e "s/^sonar.projectVersion=.*/sonar.projectVersion=${buildName}/" sonar-project.properties
-    echo set project version to ${buildName} 
-    # get the exclusion list and append it to the properties file
-    rm -f ${target}_exclusions.txt*
-    wget --no-check-certificate https://${server}/userContent/sonar/UT/${target}/${target}_exclusions.txt -e use_proxy=no
-    _append_exclusions_to_sonar_properties ${target}_exclusions.txt sonar-project.properties
+    _prepare_properties_file ${target} ${buildName}
 
     # now let the runner run :-)
     /opt/sonar-runner/bin/sonar-runner
@@ -95,19 +62,112 @@ run_sonar_single_target() {
     return 0
 }
 
-## @fn      checkout_ddal_sources()
+## @fn      _checkout_ddal_sources()
 #  @brief   check out the ddal sources from the git repo with given build name
 #  @param   {buildName} build name to be used for checkout from repository
 #  @return  <none>
-checkout_ddal_sources() {
+_checkout_ddal_sources() {
 
     local buildName=${1}
-    cd ${WORKSPACE}/sonar/build
+    local curDir=$(pwd)
+
+    cd ${BUILD_DIR}
     ./bootstrap
     echo executing checkout command git checkout $buildName 
     git checkout ${buildName}
     ./repo fetch ddal
+    mkdir ${WORKSPACE}/src
+    mv ${BUILD_DIR}/src/ddal ${WORKSPACE}/src
+    rm -rf ${BUILD_DIR}
+    cd ${curDir}
 
     return 0
 }
 
+## @fn      _get_coverage_files_from_jenkins ()
+#  @brief   retrieve the coverage.xml files and exclusion lists for UT and SCT from jenkins
+#  @param   {target} target of the coverage file, either FSM-r3 or FSM-r4
+#  @return  <none>
+_get_coverage_files_from_jenkins () {
+    local target=${1:-FSM-r3}
+
+    for coverageType in UT SCT
+    do
+        wget --no-proxy --no-check-certificate https://${SERVER}/userContent/sonar/${coverageType}/${target}/coverage.xml.gz
+        mv coverage.xml.gz ${coverageType}_${target}_coverage.xml.gz
+        _prepare_coverage_xml ${target}  ${coverageType}
+    done
+
+    wget --no-proxy --no-check-certificate https://${SERVER}/userContent/sonar/UT/${target}/${target}_exclusions.txt
+
+    return 0
+}
+
+## @fn      _prepare_coverage_xml()
+#  @brief   modify the coverage xml file for use with sonar runner
+#  @param   {target} target of the coverage file, one of FSM-r3, FSM-r4, or Lionfish
+#  @param   {coverageType} type of the coverage file, either SCT or UT
+#  @return  <none>
+_prepare_coverage_xml() {
+    local target coverageType covFile
+    target=${1:-FSM-r3}
+    coverageType=${2:-UT}
+    covFile=${coverageType}_${target}_coverage.xml
+
+    if [[ -e ${covFile}.gz ]] ; then
+        gunzip -f ${covFile}.gz
+    fi
+
+    if [[ -e ${covFile} ]] ; then
+        chmod 666 ${covFile}
+    fi
+
+    mv ${covFile} ${SONAR_DIR}/cobertura 
+
+    return 0
+}
+
+## @fn      _prepare_properties_file()
+#  @brief   prepare the project.properties file for current project
+#  @param   {target} target of the coverage file, one of FSM-r3, FSM-r4, or Lionfish
+#  @param   {buildName} build name to be set as version in the properties file
+#  @return  <none>
+_prepare_properties_file() {
+    local target buildName propfile
+    target=${1:-FSM-r3}
+    buildName=${2:-noBuildName}
+    propfile=${CONFIG_DIR}/sonar-project.properties.git.${target}
+
+    echo copying ${propfile} to $(pwd)/sonar-project.properties
+    cp ${propfile} sonar-project.properties
+
+    # set buildname as version in the properties file
+    sed -i -e "s/^sonar.projectVersion=.*/sonar.projectVersion=${buildName}/" sonar-project.properties
+    echo set project version to ${buildName}
+
+    # append the exclusion list to the properties file
+    _append_exclusions_to_sonar_properties ${target}_exclusions.txt sonar-project.properties
+
+    return 0
+}
+
+## @fn      _append_exclusions_to_sonar_properties()
+#  @brief   append the contents of the exclusion list to the sonar properties file
+#  @param   {infile} name of the exclusions file
+#  @param   {outfile} name of the properties file
+#  @return  <none>
+_append_exclusions_to_sonar_properties() {
+    local infile outfile new old
+
+    infile=${1:-fsmr3_exclusions.txt}
+    outfile=${2:-sonar-project.properties}
+    old=/src/
+    new=/src/ddal/
+
+    echo "getting exclusion list from $infile and appending it to $outfile ..."
+    echo 'sonar.exclusions= \' >> "$outfile"
+
+    cat "$infile" >> "$outfile"
+
+    return 0
+}
